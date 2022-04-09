@@ -1,30 +1,9 @@
-import { Paper, Typography, Box, Button } from '@mui/material';
-import { DataGrid } from '@mui/x-data-grid';
-
-const columns = [
-  { field: 'date', headerName: 'Date', width: 90 },
-  {
-    field: 'titleVal',
-    headerName: 'Title',
-    width: 130,
-    editable: true,
-  },
-  {
-    field: 'descriptionVal',
-    headerName: 'Description',
-    width: 345,
-    editable: true,
-  },
-  {
-    field: 'statusVal',
-    headerName: 'Status',
-    width: 95,
-  },
-];
+import { Paper, Typography, Box } from '@mui/material';
+import Table from './Table';
 
 export default function ListTOdo(props) {
   let rows = props.toDos;
-
+  let setStoredTodo = props.setTodo;
   return (
     <Box>
       <Paper
@@ -46,11 +25,12 @@ export default function ListTOdo(props) {
           </Typography>
         </Box>
         <Box sx={{ height: 293, width: '100%', marginTop: 1 }}>
-          <DataGrid rows={rows} columns={columns} checkboxSelection />
+          <Table
+            rows={rows}
+            setStoredTodo={setStoredTodo}
+            onEditChange={props.onEditChange}
+          ></Table>
         </Box>
-        <Button variant='contained' sx={{ margin: 2 }}>
-          Delete
-        </Button>
       </Paper>
     </Box>
   );
