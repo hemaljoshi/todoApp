@@ -9,16 +9,14 @@ import Paper from '@mui/material/Paper';
 import { IconButton } from '@mui/material';
 import EditTwoToneIcon from '@mui/icons-material/EditTwoTone';
 import DeleteTwoToneIcon from '@mui/icons-material/DeleteTwoTone';
+import { db } from '../firebase';
+import { remove, ref } from 'firebase/database';
 
 const TableCom = (props) => {
   const rows = props.rows;
 
   const onDeleteHandle = (id) => {
-    const filtered = rows.filter((row) => {
-      return row.id !== id;
-    });
-    localStorage.setItem('todos', JSON.stringify(filtered));
-    props.setStoredTodo(filtered);
+    remove(ref(db, `todo/${id}`));
   };
 
   const onEditHandle = (row) => {

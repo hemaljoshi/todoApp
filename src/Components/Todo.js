@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react';
 import ListTodo from './ListTodo';
 import { Container, Grid } from '@mui/material';
 import { v4 as uuidv4 } from 'uuid';
-import axios from 'axios';
 import TodoForm from './TodoForm';
+import { db } from '../firebase';
+import { set, ref, onValue, update } from 'firebase/database';
 
 const Todo = () => {
   let [storedTodo, setStoredTodo] = useState([]);
@@ -16,13 +17,12 @@ const Todo = () => {
   const [titleErr, setTitleerr] = useState(true);
   const [descriptionErr, setDescriptionErr] = useState(true);
   const [isUpdate, setIsUpdate] = useState(false);
-  let [err, setErr] = useState('');
 
   const getData = () => {
-    axios
-      .get('https://todo-app-000-default-rtdb.firebaseio.com/todo.json/')
-      .then((response) => {
-        let data = response.data;
+    onValue(ref(db), (snapshot) => {
+      if (snapshot.exists()) {
+        const response = snapshot.val();
+        const data = response.todo;
         let todos = [];
         for (const key in data) {
           todos.push({
@@ -34,21 +34,10 @@ const Todo = () => {
           });
         }
         setStoredTodo(todos);
-        console.log(todos);
-      })
-      .catch((error) => {
+      } else {
         setStoredTodo([]);
-        setErr(error);
-      });
-  };
-
-  const setData = (todo) => {
-    var filtered = Object.filter(todo, (to) => to.id === id);
-    console.log(filtered);
-    axios.post(
-      'https://todo-app-000-default-rtdb.firebaseio.com/todo.json',
-      todo
-    );
+      }
+    });
   };
 
   function formatDate(date) {
@@ -93,63 +82,27 @@ const Todo = () => {
   };
 
   const onUpdateHandler = () => {
-    // const editedRow = {
-    //   id: id,
-    //   titleVal: title,
-    //   descriptionVal: description,
-    //   statusVal: status,
-    //   date: formatDate(new Date()),
-    // };
-
-    // const arr = storedTodo;
-    // const index = arr.findIndex((todo) => todo.id === editedRow.id);
-    // arr[index].titleVal = editedRow.titleVal;
-    // arr[index].descriptionVal = editedRow.descriptionVal;
-    // arr[index].statusVal = editedRow.statusVal;
-    // arr[index].date = editedRow.date;
-    // const obj = { ...arr };
-    let uniquePropertyArray = Object.values(storedTodo).map((item) => {
-      return item.id;
-    });
-    let index = uniquePropertyArray.findIndex((item) => item === id);
-    console.log('Index ', index);
-
-    let resultValue = Object.values(storedTodo)[index];
-    console.log('Result Value', resultValue);
-
-    resultValue.id = id;
-    resultValue.titleVal = title;
-    resultValue.descriptionVal = description;
-    resultValue.statusVal = status;
-    resultValue.date = formatDate(new Date());
-    console.log('After Object Modification ', storedTodo);
-
-    // console.log(obj);
-    // // localStorage.setItem('todos', JSON.stringify(arr));
-    // Object.assign(index, obj);
-    // setStoredTodo(obj);
-    // setData(obj);
-    setIsUpdate(false);
-    setTitle('');
-    setDescription('');
-    setStatus('Todo');
-    console.log(err);
-  };
-
-  const onSubmitHandler = () => {
-    let todo = {
-      id: uuidv4(),
+    update(ref(db, `todo/${id}`), {
       titleVal: title,
       descriptionVal: description,
       statusVal: status,
       date: formatDate(new Date()),
-    };
+    });
+    setIsUpdate(false);
+    setTitle('');
+    setDescription('');
+    setStatus('Todo');
+  };
 
-    // let todos = storedTodo || [];
-    // todos = [...todos, todo];
-    // localStorage.setItem('todos', JSON.stringify(todos));
-    setData(todo);
-    setStoredTodo(todo);
+  const onSubmitHandler = () => {
+    const uuid = uuidv4();
+    set(ref(db, `todo/${uuid}`), {
+      id: uuid,
+      titleVal: title,
+      descriptionVal: description,
+      statusVal: status,
+      date: formatDate(new Date()),
+    });
     setTitle('');
     setDescription('');
   };
@@ -186,6 +139,7 @@ const Todo = () => {
     storedTodo,
     setStoredTodo,
     onEditChange,
+    getData,
   };
 
   return (

@@ -2,7 +2,7 @@ import { Paper, Typography, Box, Grid } from '@mui/material';
 import Table from './Table';
 
 export default function ListTOdo(props) {
-  const { storedTodo, setStoredTodo, onEditChange } = props;
+  const { storedTodo, setStoredTodo, onEditChange, getData } = props;
 
   return (
     <Grid item xs={8}>
@@ -30,6 +30,7 @@ export default function ListTOdo(props) {
               rows={storedTodo}
               setStoredTodo={setStoredTodo}
               onEditChange={onEditChange}
+              getData={getData}
             ></Table>
           </Box>
         </Paper>
