@@ -22,7 +22,6 @@ const TableCom = (props) => {
   };
 
   const onEditHandle = (row) => {
-    console.log(row.id);
     return props.onEditChange(row);
   };
 

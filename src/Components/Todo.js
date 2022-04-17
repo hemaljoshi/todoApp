@@ -1,32 +1,55 @@
 import { useEffect, useState } from 'react';
 import ListTodo from './ListTodo';
-import {
-  Container,
-  Grid,
-  TextField,
-  Select,
-  MenuItem,
-  InputLabel,
-  FormControl,
-  Button,
-  Box,
-  Paper,
-} from '@mui/material';
-import CreateTodoCard from './UI/CreateTodoCard';
+import { Container, Grid } from '@mui/material';
 import { v4 as uuidv4 } from 'uuid';
+import axios from 'axios';
+import TodoForm from './TodoForm';
 
 const Todo = () => {
-  let [storedTodo, setStoredTodo] = useState(
-    JSON.parse(localStorage.getItem('todos')) || []
-  );
+  let [storedTodo, setStoredTodo] = useState([]);
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState('Todo');
+  const [id, setId] = useState(0);
+
   const [titleErr, setTitleerr] = useState(true);
   const [descriptionErr, setDescriptionErr] = useState(true);
   const [isUpdate, setIsUpdate] = useState(false);
-  const [id, setId] = useState(0);
+  let [err, setErr] = useState('');
+
+  const getData = () => {
+    axios
+      .get('https://todo-app-000-default-rtdb.firebaseio.com/todo.json/')
+      .then((response) => {
+        let data = response.data;
+        let todos = [];
+        for (const key in data) {
+          todos.push({
+            id: key,
+            titleVal: data[key].titleVal,
+            descriptionVal: data[key].descriptionVal,
+            statusVal: data[key].statusVal,
+            date: data[key].date,
+          });
+        }
+        setStoredTodo(todos);
+        console.log(todos);
+      })
+      .catch((error) => {
+        setStoredTodo([]);
+        setErr(error);
+      });
+  };
+
+  const setData = (todo) => {
+    var filtered = Object.filter(todo, (to) => to.id === id);
+    console.log(filtered);
+    axios.post(
+      'https://todo-app-000-default-rtdb.firebaseio.com/todo.json',
+      todo
+    );
+  };
 
   function formatDate(date) {
     function padTo2Digits(num) {
@@ -70,25 +93,47 @@ const Todo = () => {
   };
 
   const onUpdateHandler = () => {
-    const editedRow = {
-      id: id,
-      titleVal: title,
-      descriptionVal: description,
-      statusVal: status,
-      date: formatDate(new Date()),
-    };
-    const arr = JSON.parse(localStorage.getItem('todos'));
-    const index = arr.findIndex((todo) => todo.id === editedRow.id);
-    arr[index].titleVal = editedRow.titleVal;
-    arr[index].descriptionVal = editedRow.descriptionVal;
-    arr[index].statusVal = editedRow.statusVal;
-    arr[index].date = editedRow.date;
-    setStoredTodo(arr);
-    localStorage.setItem('todos', JSON.stringify(arr));
+    // const editedRow = {
+    //   id: id,
+    //   titleVal: title,
+    //   descriptionVal: description,
+    //   statusVal: status,
+    //   date: formatDate(new Date()),
+    // };
+
+    // const arr = storedTodo;
+    // const index = arr.findIndex((todo) => todo.id === editedRow.id);
+    // arr[index].titleVal = editedRow.titleVal;
+    // arr[index].descriptionVal = editedRow.descriptionVal;
+    // arr[index].statusVal = editedRow.statusVal;
+    // arr[index].date = editedRow.date;
+    // const obj = { ...arr };
+    let uniquePropertyArray = Object.values(storedTodo).map((item) => {
+      return item.id;
+    });
+    let index = uniquePropertyArray.findIndex((item) => item === id);
+    console.log('Index ', index);
+
+    let resultValue = Object.values(storedTodo)[index];
+    console.log('Result Value', resultValue);
+
+    resultValue.id = id;
+    resultValue.titleVal = title;
+    resultValue.descriptionVal = description;
+    resultValue.statusVal = status;
+    resultValue.date = formatDate(new Date());
+    console.log('After Object Modification ', storedTodo);
+
+    // console.log(obj);
+    // // localStorage.setItem('todos', JSON.stringify(arr));
+    // Object.assign(index, obj);
+    // setStoredTodo(obj);
+    // setData(obj);
     setIsUpdate(false);
     setTitle('');
     setDescription('');
     setStatus('Todo');
+    console.log(err);
   };
 
   const onSubmitHandler = () => {
@@ -100,10 +145,11 @@ const Todo = () => {
       date: formatDate(new Date()),
     };
 
-    let todos = storedTodo || [];
-    todos = [...todos, todo];
-    localStorage.setItem('todos', JSON.stringify(todos));
-    setStoredTodo(todos);
+    // let todos = storedTodo || [];
+    // todos = [...todos, todo];
+    // localStorage.setItem('todos', JSON.stringify(todos));
+    setData(todo);
+    setStoredTodo(todo);
     setTitle('');
     setDescription('');
   };
@@ -116,102 +162,37 @@ const Todo = () => {
   };
 
   useEffect(() => {
+    getData();
     setTitleerr(false);
     setDescriptionErr(false);
   }, []);
 
+  const todoFormProps = {
+    isUpdate,
+    title,
+    onTitleChange,
+    titleErr,
+    description,
+    onDescriptionChange,
+    descriptionErr,
+    onStatusChange,
+    status,
+    onSubmitHandler,
+    onUpdateHandler,
+    onCancelHandler,
+  };
+
+  const listTodoProps = {
+    storedTodo,
+    setStoredTodo,
+    onEditChange,
+  };
+
   return (
     <Container maxWidth='lg'>
       <Grid container spacing={3} marginTop={5}>
-        <Grid item xs={4}>
-          <Paper
-            elevation={2}
-            sx={{
-              padding: 2,
-            }}
-            xs={3}
-          >
-            <CreateTodoCard isUpdate={isUpdate}>
-              <FormControl sx={{ m: 1, minWidth: 80 }}>
-                <TextField
-                  variant='outlined'
-                  label='Title'
-                  sx={{ margin: 2 }}
-                  value={title}
-                  onChange={onTitleChange}
-                  helperText={
-                    titleErr && 'Title should greater than 4 character'
-                  }
-                  error={titleErr}
-                ></TextField>
-                <TextField
-                  multiline
-                  maxRows={4}
-                  variant='outlined'
-                  label='Description'
-                  sx={{ margin: 2 }}
-                  value={description}
-                  onChange={onDescriptionChange}
-                  helperText={
-                    descriptionErr &&
-                    'Description should greater than 4 character'
-                  }
-                  error={descriptionErr}
-                ></TextField>
-                <FormControl sx={{ m: 2, minWidth: 80 }}>
-                  <InputLabel id='status'>Status</InputLabel>
-                  <Select
-                    labelId='status'
-                    defaultValue={'Todo'}
-                    id='status-select'
-                    onChange={onStatusChange}
-                    label='Status'
-                    value={status}
-                  >
-                    <MenuItem value={'Todo'}>Todo</MenuItem>
-                    <MenuItem value={'In Progress'}>In Progress</MenuItem>
-                    <MenuItem value={'Completed'}>Completed</MenuItem>
-                  </Select>
-                </FormControl>
-              </FormControl>
-            </CreateTodoCard>
-            <Box sx={{ dislay: 'inline-block', marginX: 8 }}>
-              {!isUpdate && (
-                <Button
-                  variant='contained'
-                  sx={{ marginX: 1 }}
-                  onClick={onSubmitHandler}
-                >
-                  Submit
-                </Button>
-              )}
-              {isUpdate && (
-                <Button
-                  variant='contained'
-                  sx={{ marginX: 1 }}
-                  onClick={onUpdateHandler}
-                >
-                  update
-                </Button>
-              )}
-              <Button
-                variant='contained'
-                sx={{ marginX: 1 }}
-                onClick={onCancelHandler}
-                color='error'
-              >
-                Cancel
-              </Button>
-            </Box>
-          </Paper>
-        </Grid>
-        <Grid item xs={8}>
-          <ListTodo
-            toDos={storedTodo}
-            setTodo={setStoredTodo}
-            onEditChange={onEditChange}
-          />
-        </Grid>
+        <TodoForm {...todoFormProps} />
+        <ListTodo {...listTodoProps} />
       </Grid>
     </Container>
   );
