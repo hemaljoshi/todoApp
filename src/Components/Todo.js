@@ -105,6 +105,7 @@ const Todo = () => {
     });
     setTitle('');
     setDescription('');
+    setStatus('Todo');
   };
 
   const onCancelHandler = () => {
